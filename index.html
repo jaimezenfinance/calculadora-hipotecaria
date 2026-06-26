@@ -672,14 +672,16 @@
       if (ingresos <= 0) {
         els.cuotaOut.textContent   = '— €/mes';
         els.capitalOut.textContent = '— €';
-        resetFinanciacion(); els.alertGlobal.classList.remove('visible'); return;
+        resetFinanciacion(); els.alertGlobal.classList.remove('visible');
+        actualizarWhatsApp(); return;
       }
 
       const cap35 = ingresos * 0.35;
       if (deudas >= cap35) {
         els.cuotaOut.textContent   = '0 €/mes';
         els.capitalOut.textContent = '0 €';
-        resetFinanciacion(); els.alertGlobal.classList.add('visible'); return;
+        resetFinanciacion(); els.alertGlobal.classList.add('visible');
+        actualizarWhatsApp(); return;
       }
 
       els.alertGlobal.classList.remove('visible');
@@ -793,6 +795,8 @@
     el.addEventListener('input',  calcular);
     el.addEventListener('change', calcular);
   });
+
+  actualizarWhatsApp();
 </script>
 </body>
 </html>
