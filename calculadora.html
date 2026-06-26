@@ -9,7 +9,7 @@
 
     body {
       font-family: 'Arial', sans-serif;
-      background: #F0EDE8;
+      background: #D6D1CA;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -366,7 +366,7 @@
           <p class="field-hint">Lo que entra en cuenta después de impuestos. Si sois dos titulares, suma ambos ingresos.</p>
           <div class="input-wrap">
             <span class="prefix">€</span>
-            <input type="text" inputmode="numeric" id="ingresos" placeholder="2.500" autocomplete="off" />
+            <input type="text" inputmode="numeric" id="ingresos" value="0" autocomplete="off" />
           </div>
           <div class="field-alert" id="alert-ingresos">
             Los bancos suelen exigir ingresos mínimos de 1.200 €/mes. Con tu perfil actual es posible que no te concedan hipoteca, pero hay alternativas — agéndame una llamada y lo vemos juntos.
@@ -388,7 +388,7 @@
           <p class="field-hint">La cantidad máxima que estás cómodo pagando cada mes por la hipoteca.</p>
           <div class="input-wrap">
             <span class="prefix">€</span>
-            <input type="number" id="cuota-input" placeholder="800" min="0" />
+            <input type="number" id="cuota-input" value="0" min="0" />
           </div>
         </div>
       </div>
