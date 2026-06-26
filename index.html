@@ -812,8 +812,16 @@
     updateZeroColor(el);
     el.addEventListener('input',  () => updateZeroColor(el));
     el.addEventListener('change', () => updateZeroColor(el));
-    el.addEventListener('focus',  () => el.classList.remove('val-empty'));
-    el.addEventListener('blur',   () => updateZeroColor(el));
+    el.addEventListener('focus',  () => {
+      el.classList.remove('val-empty');
+      const v = parseFloat(el.value.replace(/\./g, '')) || 0;
+      if (v === 0) el.value = '';
+    });
+    el.addEventListener('blur', () => {
+      const v = parseFloat(el.value.replace(/\./g, '')) || 0;
+      if (v === 0) el.value = '0';
+      updateZeroColor(el);
+    });
   });
 </script>
 </body>
