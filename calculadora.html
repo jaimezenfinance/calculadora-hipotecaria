@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora Hipotecaria — Jaime Valencia</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #F0EDE8;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* BANNER HEADER */
+    .site-banner {
+      width: 100%;
+      background: #2C6E8A;
+      padding: 14px 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .banner-title {
+      font-size: 1.1rem; font-family: 'Arial', sans-serif; font-weight: 800;
+      color: #FFFFFF; letter-spacing: 2px; text-transform: uppercase;
+    }
+    .banner-author {
+      font-size: 0.85rem; font-family: 'Arial', sans-serif; font-weight: 600;
+      color: rgba(255,255,255,0.75); letter-spacing: 0.3px;
+    }
+    .banner-accent { display: block; height: 4px; background: #E8915A; width: 100%; }
+
+    /* CONTENEDOR PRINCIPAL */
+    .card {
+      background: transparent;
+      padding: 24px 28px 0;
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    /* HEADER (quitado, ahora es banner) */
+    .card-header { display: none; }
+    .divider { display: none; }
+
+    /* DOS COLUMNAS */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    /* COLUMNA IZQUIERDA: inputs */
+    .col-left {
+      background: #FFFFFF;
+      border-radius: 14px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    /* empuja parámetros del préstamo al fondo de col-left */
+    #fields-capacity, #fields-price { flex: 1; display: flex; flex-direction: column; }
+    #fields-capacity .field:last-child { flex: 1; }
+    .fields-row { margin-top: auto; }
+
+    /* COLUMNA DERECHA: resultados */
+    .col-right {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* financing section fills right column height */
+    .col-right .financing-section {
+      flex: 1;
+    }
+
+    /* TOGGLE */
+    .toggle-wrap {
+      display: flex; background: #F5F3EF; border-radius: 30px;
+      padding: 4px; margin-bottom: 20px; gap: 3px;
+    }
+    .toggle-btn {
+      flex: 1; padding: 8px 10px; border: none; border-radius: 24px;
+      font-size: 0.78rem; font-family: 'Arial', sans-serif; font-weight: 600;
+      cursor: pointer; background: transparent; color: #888;
+      transition: background 0.2s, color 0.2s; line-height: 1.3; text-align: center;
+    }
+    .toggle-btn.active { background: #E8915A; color: #FFFFFF; }
+
+    /* FIELDS */
+    .field { margin-bottom: 16px; }
+    .field:last-child { margin-bottom: 0; }
+    label {
+      display: block; font-size: 0.72rem; font-family: 'Arial', sans-serif;
+      font-weight: 700; color: #2C6E8A; text-transform: uppercase;
+      letter-spacing: 0.7px; margin-bottom: 4px;
+    }
+    .field-hint {
+      font-size: 0.73rem; font-family: 'Arial', sans-serif;
+      color: #888; margin-bottom: 6px; line-height: 1.45;
+    }
+    .input-wrap { position: relative; }
+    .prefix {
+      position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+      color: #E8915A; font-weight: 700; font-size: 1rem;
+      font-family: 'Arial', sans-serif; pointer-events: none;
+    }
+    .suffix {
+      position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
+      color: #999; font-size: 0.85rem; font-family: 'Arial', sans-serif; pointer-events: none;
+    }
+    input {
+      width: 100%; padding: 10px 13px 10px 34px; border: 1.5px solid #ddd;
+      border-radius: 8px; font-size: 0.95rem; font-family: 'Arial', sans-serif;
+      color: #141210; background: #FFFFFF; outline: none;
+      transition: border-color 0.18s;
+    }
+    input:focus { border-color: #2C6E8A; }
+    input.no-prefix { padding-left: 13px; }
+    input.with-suffix { padding-right: 40px; }
+    input[type="number"] { -moz-appearance: textfield; }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    /* Alerta campo */
+    .field-alert {
+      background: #FDF3EE; border: 1.5px solid #E8915A; border-radius: 7px;
+      padding: 9px 12px; margin-top: 7px; font-family: 'Arial', sans-serif;
+      font-size: 0.75rem; color: #C4662E; line-height: 1.5; display: none;
+    }
+    .field-alert.visible { display: block; }
+
+    .shared-separator {
+      display: flex; align-items: center; gap: 10px; margin: 16px 0 14px;
+    }
+    .shared-separator span {
+      font-size: 0.66rem; font-family: 'Arial', sans-serif; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.8px; color: #bbb; white-space: nowrap;
+    }
+    .shared-separator::before, .shared-separator::after {
+      content: ''; flex: 1; height: 1px; background: #eee;
+    }
+    .fields-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field-tinted {
+      background: #F5F3EF; border-radius: 10px; padding: 12px; margin-bottom: 0;
+    }
+    .field-tinted label { margin-bottom: 3px; }
+    .field-tinted .field-hint { margin-bottom: 7px; }
+    .field-tinted input { background: #fff; }
+
+    /* ALERTA GLOBAL */
+    .alert {
+      background: #FDF3EE; border: 1.5px solid #E8915A; border-radius: 8px;
+      padding: 11px 14px; margin-top: 14px; font-family: 'Arial', sans-serif;
+      font-size: 0.82rem; color: #C4662E; line-height: 1.5; display: none;
+    }
+    .alert.visible { display: block; }
+
+    /* RESULTADOS (dentro col-right) */
+    .results {
+      background: #2C6E8A; border-radius: 14px; padding: 18px 20px;
+      box-shadow: 0 2px 12px rgba(44,110,138,0.25);
+    }
+    .results-title {
+      font-size: 0.66rem; font-family: 'Arial', sans-serif; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px; color: #E8915A; margin-bottom: 14px;
+    }
+    /* cuota + capital en fila */
+    .results-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+    .result-item {
+      padding: 0;
+    }
+    .result-item + .result-item {
+      border-left: 1px solid rgba(255,255,255,0.15);
+      padding-left: 16px;
+    }
+    .result-label {
+      font-size: 0.68rem; font-family: 'Arial', sans-serif; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.6px;
+      color: rgba(255,255,255,0.55); margin-bottom: 5px;
+    }
+    .result-value { font-size: 1.3rem; font-weight: 700; color: #FFFFFF; letter-spacing: -0.4px; line-height: 1.2; }
+    .result-value.highlight { color: #E8915A; }
+
+    /* SECCIÓN AHORRO */
+    .financing-section {
+      background: #FFFFFF; border-radius: 14px; padding: 18px 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .financing-title {
+      font-size: 0.66rem; font-family: 'Arial', sans-serif; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px; color: #2C6E8A; margin-bottom: 4px;
+    }
+    .financing-subtitle {
+      font-size: 0.72rem; font-family: 'Arial', sans-serif;
+      color: #888; margin-bottom: 12px; line-height: 1.55;
+    }
+
+    /* Nota banco constante */
+    .bank-constant-note {
+      background: rgba(44,110,138,0.1); border-radius: 8px;
+      padding: 9px 12px; margin-bottom: 12px;
+      font-size: 0.72rem; font-family: 'Arial', sans-serif;
+      color: #1A4F66; line-height: 1.5; display: none;
+    }
+    .bank-constant-note strong { font-weight: 700; }
+
+    /* Leyenda */
+    .fin-legend {
+      display: flex; gap: 12px; margin-bottom: 14px; flex-wrap: wrap;
+    }
+    .fin-legend-item {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 0.68rem; font-family: 'Arial', sans-serif; color: #666;
+    }
+    .fin-dot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+    .fin-dot.bank  { background: #2C6E8A; }
+    .fin-dot.entry { background: #E8915A; }
+    .fin-dot.costs { background: #7AAFC0; }
+
+    /* Grid 3 columnas */
+    .fin-scenarios {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+    .fin-col {
+      background: #F5F3EF; border-radius: 10px; padding: 12px;
+      display: flex; flex-direction: column; gap: 9px;
+    }
+    .fin-col-header { display: flex; flex-direction: column; gap: 3px; }
+    .fin-badge {
+      display: inline-block; background: rgba(44,110,138,0.12); color: #2C6E8A;
+      font-size: 0.82rem; font-family: 'Arial', sans-serif; font-weight: 700;
+      border-radius: 6px; padding: 2px 7px; width: fit-content;
+    }
+    .fin-col-desc {
+      font-size: 0.67rem; font-family: 'Arial', sans-serif; color: #888; line-height: 1.3;
+    }
+
+    /* Barra vertical */
+    .fin-bar-vert {
+      display: flex; flex-direction: column-reverse;
+      height: 80px; border-radius: 6px;
+      background: #E0D8D0; overflow: hidden; width: 100%;
+    }
+    .fin-bar-vert-bank {
+      background: #2C6E8A;
+      border-top: 2px dashed rgba(255,255,255,0.55);
+      transition: height 0.4s ease;
+    }
+    .fin-bar-vert-entry { background: #E8915A; transition: height 0.4s ease; }
+    .fin-bar-vert-costs { background: #7AAFC0; transition: height 0.4s ease; }
+
+    .fin-bar-labels-v { display: flex; flex-direction: column; gap: 3px; margin-top: 5px; }
+    .fin-bar-label-v {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 0.62rem; font-family: 'Arial', sans-serif; color: #666;
+    }
+    .fin-bar-label-v-dot { width: 7px; height: 7px; border-radius: 1px; flex-shrink: 0; }
+    .fin-bar-label-v strong { font-weight: 700; color: #141210; }
+
+    .fin-col-values { border-top: 1px solid #eee; padding-top: 9px; }
+    .fin-val-label {
+      font-size: 0.62rem; font-family: 'Arial', sans-serif; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.5px; color: #999; margin-bottom: 2px;
+    }
+    .fin-val-price {
+      font-size: 0.97rem; font-family: 'Arial', sans-serif; font-weight: 700;
+      color: #141210; margin-bottom: 7px;
+    }
+    .fin-val-savings {
+      font-size: 0.97rem; font-family: 'Arial', sans-serif; font-weight: 700;
+      color: #C4662E;
+    }
+
+    /* CTA — full width debajo de las dos columnas */
+    .cta-block {
+      text-align: center;
+      padding: 24px 0 28px;
+    }
+    .pre-cta-text {
+      font-family: 'Arial', sans-serif; font-size: 0.9rem;
+      color: #555; line-height: 1.65; margin-bottom: 6px;
+    }
+    .pre-cta-text strong { color: #1A4F66; font-weight: 700; }
+
+    .disclaimer {
+      font-family: 'Arial', sans-serif; font-size: 0.72rem;
+      color: #aaa; line-height: 1.5; margin-bottom: 16px;
+    }
+    .cta {
+      display: inline-block; padding: 14px 40px;
+      background: #E8915A; color: #FFFFFF; border: none; border-radius: 8px;
+      font-size: 0.95rem; font-family: 'Arial', sans-serif; font-weight: 700;
+      cursor: pointer; text-align: center; text-decoration: none;
+      transition: background 0.2s, transform 0.1s; letter-spacing: 0.2px;
+    }
+    .cta:hover { background: #C4662E; transform: translateY(-1px); }
+    .cta:active { transform: translateY(0); }
+
+    /* MOBILE */
+    @media (max-width: 700px) {
+      body { padding: 14px; align-items: flex-start; }
+      .card { padding: 22px 16px 0; }
+      .two-col { grid-template-columns: 1fr; gap: 10px; }
+      .col-left, .col-right { border-radius: 12px; }
+      .col-right .financing-section { flex: none; }
+      .results-row { grid-template-columns: 1fr; gap: 12px; }
+      .result-item + .result-item { border-left: none; border-top: 1px solid rgba(255,255,255,0.08); padding-left: 0; padding-top: 12px; }
+      .fields-row { grid-template-columns: 1fr; gap: 14px; }
+      .fin-scenarios { grid-template-columns: 1fr; gap: 10px; }
+      .fin-bar-vert { height: 14px; flex-direction: row; border-radius: 6px; }
+      .fin-bar-vert-bank  { width: var(--bar-pct, 0%); height: 100% !important; border-top: none; border-right: 2px dashed rgba(255,255,255,0.55); }
+      .fin-bar-vert-entry { width: var(--bar-pct, 0%); height: 100% !important; }
+      .fin-bar-vert-costs { width: var(--bar-pct, 0%); height: 100% !important; border-radius: 0 6px 6px 0; }
+      .fin-bar-labels-v { flex-direction: row; flex-wrap: wrap; gap: 8px; }
+      .cta-block { padding: 20px 16px 24px; }
+      .cta { display: block; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="site-banner">
+  <span class="banner-title">Calculadora Hipotecaria</span>
+  <span class="banner-author">Jaime Valencia · Broker Hipotecario</span>
+</div>
+<div class="banner-accent"></div>
+
+<div class="card">
+
+  <div class="two-col">
+
+    <!-- COLUMNA IZQUIERDA: inputs -->
+    <div class="col-left">
+
+      <div class="toggle-wrap">
+        <button class="toggle-btn active" id="btn-capacity" onclick="setMode('capacity')">
+          ¿Cuánto me presta el banco?
+        </button>
+        <button class="toggle-btn" id="btn-price" onclick="setMode('price')">
+          ¿Cuánto quiero gastar?
+        </button>
+      </div>
+
+      <div id="fields-capacity">
+        <div class="field">
+          <label for="ingresos">Ingresos netos mensuales</label>
+          <p class="field-hint">Lo que entra en cuenta después de impuestos. Si sois dos titulares, suma ambos ingresos.</p>
+          <div class="input-wrap">
+            <span class="prefix">€</span>
+            <input type="text" inputmode="numeric" id="ingresos" placeholder="2.500" autocomplete="off" />
+          </div>
+          <div class="field-alert" id="alert-ingresos">
+            Los bancos suelen exigir ingresos mínimos de 1.200 €/mes. Con tu perfil actual es posible que no te concedan hipoteca, pero hay alternativas — agéndame una llamada y lo vemos juntos.
+          </div>
+        </div>
+        <div class="field">
+          <label for="deudas">Deudas mensuales actuales</label>
+          <p class="field-hint">Cuotas de coche, préstamos personales, tarjetas a plazos, etc. Si no tienes, deja en 0.</p>
+          <div class="input-wrap">
+            <span class="prefix">€</span>
+            <input type="number" id="deudas" placeholder="0" min="0" />
+          </div>
+        </div>
+      </div>
+
+      <div id="fields-price" style="display:none">
+        <div class="field">
+          <label for="cuota-input">Cuota mensual que quieres pagar</label>
+          <p class="field-hint">La cantidad máxima que estás cómodo pagando cada mes por la hipoteca.</p>
+          <div class="input-wrap">
+            <span class="prefix">€</span>
+            <input type="number" id="cuota-input" placeholder="800" min="0" />
+          </div>
+        </div>
+      </div>
+
+      <div class="shared-separator"><span>Parámetros del préstamo</span></div>
+
+      <div class="fields-row">
+        <div class="field" style="margin-bottom:0">
+          <label for="plazo">Plazo</label>
+          <p class="field-hint">Años de la hipoteca. La mayoría de bancos llegan a 30.</p>
+          <div class="input-wrap">
+            <span class="suffix">años</span>
+            <input type="number" id="plazo" class="no-prefix with-suffix" min="1" max="40" value="30" />
+          </div>
+        </div>
+        <div class="field-tinted" style="margin-bottom:0">
+          <label for="interes">Tipo de interés</label>
+          <p class="field-hint">3% como media orientativa. Ajústalo si tienes oferta.</p>
+          <div class="input-wrap">
+            <span class="suffix">%</span>
+            <input type="number" id="interes" class="no-prefix with-suffix" value="3" min="0.1" max="15" step="0.1" />
+          </div>
+        </div>
+      </div>
+
+      <div class="alert" id="alert-global">
+        Con tus compromisos actuales el banco no puede concederte hipoteca. Escríbeme y buscamos soluciones.
+      </div>
+
+    </div>
+
+    <!-- COLUMNA DERECHA: capacidad + escenarios -->
+    <div class="col-right">
+
+      <!-- cuota + capital EN FILA -->
+      <div class="results">
+        <div class="results-title" id="results-title">Tu capacidad hipotecaria</div>
+        <div class="results-row">
+          <div class="result-item" id="row-cuota">
+            <div class="result-label">Cuota máxima disponible</div>
+            <div class="result-value" id="cuota-out">— €/mes</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Capital que el banco te presta</div>
+            <div class="result-value highlight" id="capital-out">— €</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- escenarios ahorro -->
+      <div class="financing-section">
+        <div class="financing-title">¿Cuánto necesitas ahorrado?</div>
+        <div class="financing-subtitle">
+          El banco siempre presta el mismo importe. La diferencia está en cuánto pones tú de entrada. Los gastos de compraventa (impuestos, notaría, registro) son aprox. un 10%. Comisiones inmobiliarias y financieras no incluidas.
+        </div>
+
+        <div class="bank-constant-note" id="bank-note">
+          El banco pone siempre <strong id="bank-note-amount">—</strong> en los tres escenarios — la línea discontinua en las barras lo marca.
+        </div>
+
+        <div class="fin-legend">
+          <div class="fin-legend-item"><div class="fin-dot bank"></div><span>Banco</span></div>
+          <div class="fin-legend-item"><div class="fin-dot entry"></div><span>Entrada</span></div>
+          <div class="fin-legend-item"><div class="fin-dot costs"></div><span>Gastos est. (10%)</span></div>
+        </div>
+
+        <div class="fin-scenarios">
+
+          <!-- 100% -->
+          <div class="fin-col">
+            <div class="fin-col-header">
+              <span class="fin-badge">Hipoteca 100%</span>
+              <span class="fin-col-desc">Sin entrada + gastos</span>
+            </div>
+            <div>
+              <div class="fin-bar-vert">
+                <div class="fin-bar-vert-bank"  id="bar-bank-100"  style="height:0%"></div>
+                <div class="fin-bar-vert-entry" id="bar-entry-100" style="height:0%"></div>
+                <div class="fin-bar-vert-costs" id="bar-costs-100" style="height:0%"></div>
+              </div>
+              <div class="fin-bar-labels-v">
+                <div class="fin-bar-label-v">
+                  <div class="fin-bar-label-v-dot" style="background:#2C6E8A"></div>
+                  <span>Banco: <strong id="lbl-bank-100">—</strong></span>
+                </div>
+                <div class="fin-bar-label-v">
+                  <div class="fin-bar-label-v-dot" style="background:#E8915A"></div>
+                  <span>Entrada: <strong id="lbl-entry-100">—</strong></span>
+                </div>
+                <div class="fin-bar-label-v">
+                  <div class="fin-bar-label-v-dot" style="background:#7AAFC0"></div>
+                  <span>Gastos: <strong id="lbl-costs-100">—</strong></span>
+                </div>
+              </div>
+            </div>
+            <div class="fin-col-values">
+              <div class="fin-val-label">Precio vivienda</div>
+              <div class="fin-val-price" id="precio100">—</div>
+              <div class="fin-val-label">Necesitas ahorrado</div>
+              <div class="fin-val-savings" id="ahorro100">—</div>
+            </div>
+          </div>
+
+          <!-- 90% -->
+          <div class="fin-col">
+            <div class="fin-col-header">
+              <span class="fin-badge">Hipoteca 90%</span>
+              <span class="fin-col-desc">10% de entrada + gastos</span>
+            </div>
+            <div>
+              <div class="fin-bar-vert">
+                <div class="fin-bar-vert-bank"  id="bar-bank-90"  style="height:0%"></div>
+                <div class="fin-bar-vert-entry" id="bar-entry-90" style="height:0%"></div>
+                <div class="fin-bar-vert-costs" id="bar-costs-90" style="height:0%"></div>
+              </div>
+              <div class="fin-bar-labels-v">
+                <div class="fin-bar-label-v">
+                  <div class="fin-bar-label-v-dot" style="background:#2C6E8A"></div>
+                  <span>Banco: <strong id="lbl-bank-90">—</strong></span>
+                </div>
+                <div class="fin-bar-label-v">
+                  <div class="fin-bar-label-v-dot" style="background:#E8915A"></div>
+                  <span>Entrada: <strong id="lbl-entry-90">—</strong></span>
+                </div>
+                <div class="fin-bar-label-v">
+                  <div class="fin-bar-label-v-dot" style="background:#7AAFC0"></div>
+                  <span>Gastos: <strong id="lbl-costs-90">—</strong></span>
+                </div>
+              </div>
+            </div>
+            <div class="fin-col-values">
+              <div class="fin-val-label">Precio vivienda</div>
+              <div class="fin-val-price" id="precio90">—</div>
+              <div class="fin-val-label">Necesitas ahorrado</div>
+              <div class="fin-val-savings" id="ahorro90">—</div>
+            </div>
+          </div>
+
+          <!-- 80% -->
+          <div class="fin-col">
+            <div class="fin-col-header">
+              <span class="fin-badge">Hipoteca 80%</span>
+              <span class="fin-col-desc">20% de entrada + gastos</span>
+            </div>
+            <div>
+              <div class="fin-bar-vert">
+                <div class="fin-bar-vert-bank"  id="bar-bank-80"  style="height:0%"></div>
+                <div class="fin-bar-vert-entry" id="bar-entry-80" style="height:0%"></div>
+                <div class="fin-bar-vert-costs" id="bar-costs-80" style="height:0%"></div>
+              </div>
+              <div class="fin-bar-labels-v">
+                <div class="fin-bar-label-v">
+                  <div class="fin-bar-label-v-dot" style="background:#2C6E8A"></div>
+                  <span>Banco: <strong id="lbl-bank-80">—</strong></span>
+                </div>
+                <div class="fin-bar-label-v">
+                  <div class="fin-bar-label-v-dot" style="background:#E8915A"></div>
+                  <span>Entrada: <strong id="lbl-entry-80">—</strong></span>
+                </div>
+                <div class="fin-bar-label-v">
+                  <div class="fin-bar-label-v-dot" style="background:#7AAFC0"></div>
+                  <span>Gastos: <strong id="lbl-costs-80">—</strong></span>
+                </div>
+              </div>
+            </div>
+            <div class="fin-col-values">
+              <div class="fin-val-label">Precio vivienda</div>
+              <div class="fin-val-price" id="precio80">—</div>
+              <div class="fin-val-label">Necesitas ahorrado</div>
+              <div class="fin-val-savings" id="ahorro80">—</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CTA centrado debajo de las dos columnas -->
+  <div class="cta-block">
+    <p class="pre-cta-text">
+      ¿No sabes a qué hipoteca puedes optar con tu perfil? ¿No llegas al ahorro para la entrada?<br>
+      <strong>Agenda una llamada conmigo — y en 20 minutos te digo exactamente qué opciones reales tienes.</strong>
+    </p>
+    <a id="cta-wa" href="#" class="cta" target="_blank">Háblame por WhatsApp →</a>
+  </div>
+
+</div>
+
+<script>
+  let mode = 'capacity';
+
+  const els = {
+    ingresos:      document.getElementById('ingresos'),
+    deudas:        document.getElementById('deudas'),
+    cuotaInput:    document.getElementById('cuota-input'),
+    plazo:         document.getElementById('plazo'),
+    interes:       document.getElementById('interes'),
+    cuotaOut:      document.getElementById('cuota-out'),
+    capitalOut:    document.getElementById('capital-out'),
+    alertGlobal:   document.getElementById('alert-global'),
+    alertIngresos: document.getElementById('alert-ingresos'),
+    rowCuota:      document.getElementById('row-cuota'),
+    resultsTitle:  document.getElementById('results-title'),
+    bankNote:      document.getElementById('bank-note'),
+    bankNoteAmt:   document.getElementById('bank-note-amount'),
+  };
+
+  const scenarios = [
+    { pct: 1.00, id: '100', hasEntry: false, showEntryLabel: true  },
+    { pct: 0.90, id: '90',  hasEntry: true,  showEntryLabel: true  },
+    { pct: 0.80, id: '80',  hasEntry: true,  showEntryLabel: true  },
+  ];
+
+  function fmt(n) {
+    return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' €';
+  }
+
+  function parseIngresos() {
+    return parseInt(els.ingresos.value.replace(/\./g, '').replace(/[^0-9]/g, '')) || 0;
+  }
+
+  function capitalFromCuota(cuota, tasa, anios) {
+    const r = tasa / 12, n = anios * 12;
+    if (r === 0) return cuota * n;
+    return cuota * (1 - Math.pow(1 + r, -n)) / r;
+  }
+
+  function renderFinanciacion(capital) {
+    const price80   = capital / 0.80;
+    const maxTotal  = capital + 0.30 * price80;
+    const bankPct   = (capital / maxTotal) * 100;
+
+    els.bankNote.style.display = '';
+    els.bankNoteAmt.textContent = fmt(capital);
+
+    scenarios.forEach(({ pct, id, hasEntry }) => {
+      const price = capital / pct;
+      const entry = (1 - pct) * price;
+      const costs = 0.10 * price;
+
+      const entryPct = (entry / maxTotal) * 100;
+      const costsPct = (costs / maxTotal) * 100;
+
+      const setBar = (el, pct) => { el.style.height = pct.toFixed(1) + '%'; el.style.setProperty('--bar-pct', pct.toFixed(1) + '%'); };
+      setBar(document.getElementById('bar-bank-'  + id), bankPct);
+      setBar(document.getElementById('bar-entry-' + id), entryPct);
+      setBar(document.getElementById('bar-costs-' + id), costsPct);
+
+      document.getElementById('lbl-bank-' + id).textContent = fmt(capital);
+      const entryEl = document.getElementById('lbl-entry-' + id);
+      if (entryEl) entryEl.textContent = hasEntry ? fmt(entry) : '—';
+      document.getElementById('lbl-costs-' + id).textContent = fmt(costs);
+
+      document.getElementById('precio' + id).textContent = fmt(price);
+      document.getElementById('ahorro' + id).textContent = fmt(entry + costs);
+    });
+  }
+
+  function resetFinanciacion() {
+    els.bankNote.style.display = 'none';
+    scenarios.forEach(({ id, hasEntry }) => {
+      ['bank','entry','costs'].forEach(seg =>
+        document.getElementById('bar-' + seg + '-' + id).style.height = '0%'
+      );
+      document.getElementById('lbl-bank-' + id).textContent = '—';
+      const entryResetEl = document.getElementById('lbl-entry-' + id);
+      if (entryResetEl) entryResetEl.textContent = '—';
+      document.getElementById('lbl-costs-' + id).textContent = '—';
+      document.getElementById('precio' + id).textContent = '—';
+      document.getElementById('ahorro' + id).textContent = '—';
+    });
+  }
+
+  function calcular() {
+    const plazo = parseFloat(els.plazo.value)    || 30;
+    const tasa  = (parseFloat(els.interes.value) || 3) / 100;
+
+    if (mode === 'capacity') {
+      const ingresos = parseIngresos();
+      const deudas   = parseFloat(els.deudas.value) || 0;
+
+      if (ingresos <= 0) {
+        els.cuotaOut.textContent   = '— €/mes';
+        els.capitalOut.textContent = '— €';
+        resetFinanciacion(); els.alertGlobal.classList.remove('visible'); return;
+      }
+
+      const cap35 = ingresos * 0.35;
+      if (deudas >= cap35) {
+        els.cuotaOut.textContent   = '0 €/mes';
+        els.capitalOut.textContent = '0 €';
+        resetFinanciacion(); els.alertGlobal.classList.add('visible'); return;
+      }
+
+      els.alertGlobal.classList.remove('visible');
+      const cuota   = cap35 - deudas;
+      const capital = capitalFromCuota(cuota, tasa, plazo);
+      els.cuotaOut.textContent   = fmt(cuota) + '/mes';
+      els.capitalOut.textContent = fmt(capital);
+      renderFinanciacion(capital);
+
+    } else {
+      const cuota = parseFloat(els.cuotaInput.value) || 0;
+      els.alertGlobal.classList.remove('visible');
+      if (cuota <= 0) { els.capitalOut.textContent = '— €'; resetFinanciacion(); return; }
+      const capital = capitalFromCuota(cuota, tasa, plazo);
+      els.capitalOut.textContent = fmt(capital);
+      renderFinanciacion(capital);
+    }
+    actualizarWhatsApp();
+  }
+
+  // ────────────────────────────────────────────
+  // NÚMERO DE WHATSAPP — pon aquí tu número con prefijo internacional, sin +
+  const WA_NUMBER = '34614454567';
+  // ────────────────────────────────────────────
+
+  function actualizarWhatsApp() {
+    const capital = els.capitalOut.textContent;
+    if (capital === '— €' || capital === '0 €') {
+      document.getElementById('cta-wa').href = 'https://wa.me/' + WA_NUMBER;
+      return;
+    }
+    const plazo   = els.plazo.value || '30';
+    const interes = els.interes.value || '3';
+    const p100 = document.getElementById('precio100').textContent;
+    const a100 = document.getElementById('ahorro100').textContent;
+    const p90  = document.getElementById('precio90').textContent;
+    const a90  = document.getElementById('ahorro90').textContent;
+    const p80  = document.getElementById('precio80').textContent;
+    const a80  = document.getElementById('ahorro80').textContent;
+
+    let resumen = '';
+    if (mode === 'capacity') {
+      const cuota = els.cuotaOut.textContent;
+      resumen =
+        `Hola Jaime, he usado tu calculadora hipotecaria y estos son mis números:\n\n` +
+        `• Cuota máxima: ${cuota}\n` +
+        `• Capital que me puede prestar el banco: ${capital}\n` +
+        `• Plazo: ${plazo} años | Interés: ${interes}%\n\n` +
+        `Escenarios de ahorro necesario:\n` +
+        `  · 100% financiación → vivienda ${p100} | ahorro ${a100}\n` +
+        `  · 90% financiación → vivienda ${p90} | ahorro ${a90}\n` +
+        `  · 80% financiación → vivienda ${p80} | ahorro ${a80}\n\n` +
+        `¿Puedes ayudarme a ver qué opciones reales tengo?`;
+    } else {
+      resumen =
+        `Hola Jaime, he usado tu calculadora hipotecaria y estos son mis números:\n\n` +
+        `• Capital que me puede prestar el banco: ${capital}\n` +
+        `• Plazo: ${plazo} años | Interés: ${interes}%\n\n` +
+        `Escenarios de ahorro necesario:\n` +
+        `  · 100% financiación → vivienda ${p100} | ahorro ${a100}\n` +
+        `  · 90% financiación → vivienda ${p90} | ahorro ${a90}\n` +
+        `  · 80% financiación → vivienda ${p80} | ahorro ${a80}\n\n` +
+        `¿Puedes ayudarme a ver qué opciones reales tengo?`;
+    }
+
+    document.getElementById('cta-wa').href =
+      'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(resumen);
+  }
+
+  function setMode(m) {
+    mode = m;
+    document.getElementById('fields-capacity').style.display = m === 'capacity' ? '' : 'none';
+    document.getElementById('fields-price').style.display    = m === 'price'    ? '' : 'none';
+    document.getElementById('btn-capacity').classList.toggle('active', m === 'capacity');
+    document.getElementById('btn-price').classList.toggle('active', m === 'price');
+    els.rowCuota.style.display   = m === 'capacity' ? '' : 'none';
+    els.resultsTitle.textContent = m === 'capacity' ? 'Tu capacidad hipotecaria' : 'Tu poder de compra';
+    els.alertIngresos.classList.remove('visible');
+    calcular();
+  }
+
+  // Formateo con puntos en ingresos
+  els.ingresos.addEventListener('input', function () {
+    const prev = this.value.length;
+    const raw  = this.value.replace(/[^0-9]/g, '');
+    const num  = parseInt(raw) || 0;
+    const fmtd = num > 0 ? num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '';
+    const pos  = this.selectionStart;
+    this.value = fmtd;
+    const diff = this.value.length - prev;
+    try { this.setSelectionRange(pos + diff, pos + diff); } catch(e) {}
+    els.alertIngresos.classList.remove('visible');
+    calcular();
+  });
+
+  // Alerta <1200 solo al salir del campo
+  els.ingresos.addEventListener('blur', function () {
+    const v = parseIngresos();
+    if (v > 0 && v < 1200) {
+      els.alertIngresos.classList.add('visible');
+    } else {
+      els.alertIngresos.classList.remove('visible');
+    }
+  });
+
+  els.ingresos.addEventListener('focus', function () {
+    els.alertIngresos.classList.remove('visible');
+  });
+
+  [els.deudas, els.cuotaInput, els.plazo, els.interes].forEach(el => {
+    el.addEventListener('input',  calcular);
+    el.addEventListener('change', calcular);
+  });
+</script>
+</body>
+</html>
