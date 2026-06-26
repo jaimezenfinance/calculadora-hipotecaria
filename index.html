@@ -125,6 +125,7 @@
       transition: border-color 0.18s;
     }
     input:focus { border-color: #2C6E8A; }
+    input.val-empty { color: #999; }
     input.no-prefix { padding-left: 13px; }
     input.with-suffix { padding-right: 40px; }
     input[type="number"] { -moz-appearance: textfield; }
@@ -800,6 +801,20 @@
   });
 
   actualizarWhatsApp();
+
+  // Color gris en campos con valor 0
+  const zeroInputs = [els.ingresos, els.deudas, els.cuotaInput];
+  function updateZeroColor(el) {
+    const v = parseFloat(el.value.replace(/\./g, '')) || 0;
+    el.classList.toggle('val-empty', v === 0);
+  }
+  zeroInputs.forEach(el => {
+    updateZeroColor(el);
+    el.addEventListener('input',  () => updateZeroColor(el));
+    el.addEventListener('change', () => updateZeroColor(el));
+    el.addEventListener('focus',  () => el.classList.remove('val-empty'));
+    el.addEventListener('blur',   () => updateZeroColor(el));
+  });
 </script>
 </body>
 </html>
